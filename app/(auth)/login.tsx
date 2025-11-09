@@ -1,8 +1,7 @@
 import LinearButton from '@/components/linear-button';
-import Feather from '@expo/vector-icons/Feather';
-import { Link, router } from 'expo-router';
+import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Login = () => {
@@ -19,13 +18,7 @@ const Login = () => {
   return (
     <View className='bg-gray-900'>
       <SafeAreaView>
-        <TouchableOpacity
-          className='app-container pt-8'
-          onPress={() => router.back()}
-        >
-          <Feather name='arrow-left' size={24} color='white' />
-        </TouchableOpacity>
-        <View className='app-container  w-full h-full pt-16'>
+        <View className='app-container  w-full h-full pt-32'>
           <Text className='text-white-100 font-josefinSans-bold text-4xl text-center'>
             Login to your account
           </Text>
