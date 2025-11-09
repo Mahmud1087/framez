@@ -1,5 +1,5 @@
 import LinearButton from '@/components/linear-button';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ const Login = () => {
       email,
       password,
     });
+    router.navigate('/feed');
   };
 
   return (
