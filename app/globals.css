@@ -5,3 +5,19 @@
 .app-container {
   @apply w-[90%] mx-auto;
 }
+
+.gradient-bg {
+  width: '100%';
+  height: 50;
+  border-radius: 12;
+  justify-content: 'center';
+  align-items: 'center';
+}
+
+.form-input {
+  @apply bg-gray-600 shadow rounded-full py-4 px-6 font-josefinSans;
+}
+
+.form-label {
+  @apply text-gray-300 mb-3 font-josefinSans-medium text-xl;
+}

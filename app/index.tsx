@@ -1,6 +1,7 @@
 import onboarding from '@/assets/images/onboarding.png';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import LinearButton from '@/components/linear-button';
+import { router } from 'expo-router';
+import { Image, Text, View } from 'react-native';
 
 export default function Index() {
   return (
@@ -21,39 +22,11 @@ export default function Index() {
           Where you get to connect with your friends, post, share, and connect
         </Text>
 
-        <TouchableOpacity className='mt-10 w-full bg-gradient-to-r'>
-          <LinearGradient
-            colors={['#4c669f', '#3b5998', '#192f6a']}
-            style={styles.gradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Text className='text-white-100 font-josefinSans-medium text-2xl'>
-              Get Started
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
+        <LinearButton
+          onPress={() => router.navigate('/register')}
+          text='Get Started'
+        />
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  gradient: {
-    width: '100%',
-    height: 50,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  text: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-});
