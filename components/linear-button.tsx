@@ -1,12 +1,14 @@
+import AntDesign from '@expo/vector-icons/AntDesign';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text, TouchableOpacity } from 'react-native';
 
 type Props = {
   onPress?: () => void;
   text: string;
+  loading?: boolean;
 };
 
-const LinearButton = ({ onPress, text }: Props) => {
+const LinearButton = ({ onPress, text, loading }: Props) => {
   return (
     <TouchableOpacity
       className='mt-10 w-full bg-gradient-to-r'
@@ -24,9 +26,18 @@ const LinearButton = ({ onPress, text }: Props) => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Text className='text-white-100 font-josefinSans-medium text-2xl w-full text-center'>
-          {text}
-        </Text>
+        {loading ? (
+          <AntDesign
+            name='loading'
+            size={24}
+            color='black'
+            className='animate-spin'
+          />
+        ) : (
+          <Text className='text-white-100 font-josefinSans-medium text-2xl w-full text-center'>
+            {text}
+          </Text>
+        )}
       </LinearGradient>
     </TouchableOpacity>
   );
