@@ -8,10 +8,15 @@ import {
   JosefinSans_700Bold,
   useFonts,
 } from '@expo-google-fonts/josefin-sans';
+import { ConvexProvider, ConvexReactClient } from 'convex/react';
 import { Slot, SplashScreen } from 'expo-router';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import './globals.css';
+
+const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
+  unsavedChangesWarning: false,
+});
 
 export default function RootLayout() {
   const [fontsLoaded, error] = useFonts({
@@ -29,9 +34,11 @@ export default function RootLayout() {
 
   return (
     <ClerkProvider tokenCache={tokenCache}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <Slot />
-      </GestureHandlerRootView>
+      <ConvexProvider client={convex}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <Slot />
+        </GestureHandlerRootView>
+      </ConvexProvider>
     </ClerkProvider>
   );
 }
