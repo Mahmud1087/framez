@@ -1,28 +1,13 @@
-import {
-  JosefinSans_300Light,
-  JosefinSans_400Regular,
-  JosefinSans_500Medium,
-  JosefinSans_600SemiBold,
-  JosefinSans_700Bold,
-  useFonts,
-} from '@expo-google-fonts/josefin-sans';
-import { SplashScreen, Stack } from 'expo-router';
-import { useEffect } from 'react';
+import { useAuth } from '@clerk/clerk-expo';
+import { Redirect, Stack } from 'expo-router';
 import '../globals.css';
 
 export default function AuthLayout() {
-  const [fontsLoaded, error] = useFonts({
-    JosefinSans_300Light,
-    JosefinSans_400Regular,
-    JosefinSans_500Medium,
-    JosefinSans_600SemiBold,
-    JosefinSans_700Bold,
-  });
+  const { isSignedIn } = useAuth();
 
-  useEffect(() => {
-    if (error) throw error;
-    if (fontsLoaded) SplashScreen.hideAsync();
-  }, [fontsLoaded, error]);
+  if (isSignedIn) {
+    return <Redirect href={'/feed'} />;
+  }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

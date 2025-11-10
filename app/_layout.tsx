@@ -1,3 +1,5 @@
+import { ClerkProvider } from '@clerk/clerk-expo';
+import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import {
   JosefinSans_300Light,
   JosefinSans_400Regular,
@@ -6,7 +8,7 @@ import {
   JosefinSans_700Bold,
   useFonts,
 } from '@expo-google-fonts/josefin-sans';
-import { SplashScreen, Stack } from 'expo-router';
+import { Slot, SplashScreen } from 'expo-router';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import './globals.css';
@@ -26,8 +28,10 @@ export default function RootLayout() {
   }, [fontsLoaded, error]);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Stack screenOptions={{ headerShown: false }} />;
-    </GestureHandlerRootView>
+    <ClerkProvider tokenCache={tokenCache}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Slot />
+      </GestureHandlerRootView>
+    </ClerkProvider>
   );
 }
