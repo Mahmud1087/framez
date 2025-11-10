@@ -15,7 +15,7 @@
 }
 
 .form-input {
-  @apply bg-gray-600 shadow rounded-full py-4 px-6 font-josefinSans;
+  @apply bg-gray-800 text-gray-400 shadow rounded-full py-4 px-6 font-josefinSans;
 }
 
 .form-label {
