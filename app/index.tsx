@@ -19,7 +19,7 @@ export default function Index() {
           Welcome to Framez
         </Text>
         <Text className='text-gray-400 text-center font-josefinSans-medium text-xl'>
-          Where you get to connect with your friends, post, share, and connect
+          Where you get to post, comment, share, and connect with your friends
         </Text>
 
         <LinearButton

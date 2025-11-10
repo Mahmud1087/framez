@@ -29,8 +29,9 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
+        tabBarShowLabel: false,
         headerShown: false,
-        tabBarActiveTintColor: '#ffd33d',
+        tabBarActiveTintColor: '#FE8C00',
         // tabBarActiveTintColor: colorScheme === 'dark' ? 'white' : 'blue',
         // tabBarInactiveTintColor: colorScheme === 'dark' ? 'gray' : 'black',
         tabBarStyle: {
@@ -62,7 +63,7 @@ export default function TabsLayout() {
             <Ionicons
               name={focused ? 'add-circle-sharp' : 'add-circle-outline'}
               color={color}
-              size={24}
+              size={30}
             />
           ),
         }}
