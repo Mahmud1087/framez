@@ -8,6 +8,7 @@ import {
 } from '@expo-google-fonts/josefin-sans';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import './globals.css';
 
 export default function RootLayout() {
@@ -24,5 +25,9 @@ export default function RootLayout() {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded, error]);
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Stack screenOptions={{ headerShown: false }} />;
+    </GestureHandlerRootView>
+  );
 }
