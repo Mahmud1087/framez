@@ -18,7 +18,7 @@ const LinearButton = ({ onPress, text, loading }: Props) => {
         colors={['#4c669f', '#3b5998', '#192f6a']}
         style={{
           width: '100%',
-          height: 50,
+          height: 45,
           borderRadius: 100,
           justifyContent: 'center',
           alignItems: 'center',
@@ -34,7 +34,7 @@ const LinearButton = ({ onPress, text, loading }: Props) => {
             className='animate-spin'
           />
         ) : (
-          <Text className='text-white-100 font-josefinSans-medium text-2xl w-full text-center'>
+          <Text className='text-white-100 font-josefinSans-medium text-xl w-full text-center'>
             {text}
           </Text>
         )}

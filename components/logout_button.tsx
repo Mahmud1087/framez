@@ -29,7 +29,7 @@ export const SignOutButton = () => {
           className='animate-spin'
         />
       ) : (
-        <Text className='text-white-100 font-josefinSans-medium text-lg w-full text-center'>
+        <Text className='text-white-100 font-josefinSans-medium text-lg  w-full text-center'>
           Logout
         </Text>
       )}

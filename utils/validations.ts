@@ -1,3 +1,6 @@
+import { ClerkAPIError } from '@clerk/types';
+import { Alert } from 'react-native';
+
 export const validateFirstName = (value: string) => {
   if (!value.trim()) {
     return 'First name is required';
@@ -56,4 +59,34 @@ export const validateConfirmPassword = (value: string, password: string) => {
     return 'Passwords do not match';
   }
   return '';
+};
+
+export const handleClerkError = (err: any) => {
+  // Check if it's a Clerk API error with errors array
+  if (err.errors && Array.isArray(err.errors)) {
+    const clerkErrors = err.errors as ClerkAPIError[];
+
+    // Get the first error message
+    const firstError = clerkErrors[0];
+    const errorMessage = firstError.longMessage || firstError.message;
+
+    // Show alert with the error
+    Alert.alert('Registration Error', errorMessage, [
+      { text: 'OK', style: 'default' },
+    ]);
+  }
+  // Handle other error formats
+  else if (err.message) {
+    Alert.alert('Registration Error', err.message, [
+      { text: 'OK', style: 'default' },
+    ]);
+  }
+  // Fallback for unknown error formats
+  else {
+    Alert.alert(
+      'Registration Error',
+      'An unexpected error occurred. Please try again.',
+      [{ text: 'OK', style: 'default' }]
+    );
+  }
 };
