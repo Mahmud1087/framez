@@ -121,3 +121,33 @@ export const checkUserLike = query({
     return { liked: !!like };
   },
 });
+
+export const deletePost = mutation({
+  args: { postId: v.id('posts') },
+  handler: async ({ db }, { postId }) => {
+    // Delete the post
+    await db.delete(postId);
+
+    // Delete all comments associated with the post
+    const comments = await db
+      .query('comments')
+      .withIndex('by_post', (q) => q.eq('postId', postId))
+      .collect();
+
+    for (const comment of comments) {
+      await db.delete(comment._id);
+    }
+
+    // Delete all likes associated with the post
+    const likes = await db
+      .query('likes')
+      .withIndex('by_post', (q) => q.eq('postId', postId))
+      .collect();
+
+    for (const like of likes) {
+      await db.delete(like._id);
+    }
+
+    return { success: true };
+  },
+});

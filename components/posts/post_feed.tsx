@@ -27,6 +27,9 @@ export default function PostFeed({ userId, limit = 10 }: Props) {
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Determine which data to use
+  // const isOwnProfile = user?.id === userId;
+
   // Fetch posts based on whether we're viewing a specific user or the feed
   const feedData = useQuery(
     api.posts.create_post.getFeed,
@@ -154,7 +157,9 @@ export default function PostFeed({ userId, limit = 10 }: Props) {
   return (
     <FlatList
       data={allPosts}
-      renderItem={({ item }) => <InstagramPost post={item} />}
+      renderItem={({ item }) => (
+        <InstagramPost post={item} showDeleteOption={userId ? true : false} />
+      )}
       keyExtractor={(item) => item._id}
       onEndReached={handleLoadMore}
       onEndReachedThreshold={0.5}

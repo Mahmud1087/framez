@@ -46,19 +46,25 @@ export interface Post {
 
 interface Props {
   post: Post;
+  showDeleteOption?: boolean; // True when viewing user's own profile
 }
 
-export default function InstagramPost({ post }: Props) {
+export default function InstagramPost({
+  post,
+  showDeleteOption = false,
+}: Props) {
   const { user } = useUser();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   // Convex mutations and queries
   const toggleLike = useMutation(api.posts.create_post.toggleLike);
   const addComment = useMutation(api.posts.create_post.addComment);
+  const deletePost = useMutation(api.posts.create_post.deletePost);
   const comments = useQuery(api.posts.create_post.getComments, {
     postId: post._id,
   });
@@ -75,6 +81,10 @@ export default function InstagramPost({ post }: Props) {
 
   const liked = userLikes?.liked || false;
   const isLoadingComments = comments === undefined;
+
+  // Check if current user owns this post
+  const isOwnPost = user?.id === post.userId;
+  const canDelete = showDeleteOption && isOwnPost;
 
   // Pause all videos except the current one
   useEffect(() => {
@@ -177,6 +187,37 @@ export default function InstagramPost({ post }: Props) {
     }
   };
 
+  const handleDeletePost = () => {
+    Alert.alert(
+      'Delete Post',
+      'Are you sure you want to delete this post? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletePost({ postId: post._id });
+              setShowMenu(false);
+              Alert.alert('Success', 'Post deleted successfully.', [
+                { text: 'OK', style: 'default' },
+              ]);
+            } catch (error: any) {
+              console.error('Delete error:', error);
+              Alert.alert('Error', 'Failed to delete post. Please try again.', [
+                { text: 'OK', style: 'default' },
+              ]);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const formatTimestamp = (timestamp: number) => {
     const now = Date.now();
     const diff = now - timestamp;
@@ -208,9 +249,11 @@ export default function InstagramPost({ post }: Props) {
           />
           <Text className='font-semibold text-sm'>{post.fullName}</Text>
         </View>
-        <TouchableOpacity>
-          <Ionicons name='ellipsis-horizontal' size={24} color='black' />
-        </TouchableOpacity>
+        {canDelete && (
+          <TouchableOpacity onPress={() => setShowMenu(true)}>
+            <Ionicons name='ellipsis-horizontal' size={24} color='black' />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Media Carousel (Images & Videos) */}
@@ -439,6 +482,37 @@ export default function InstagramPost({ post }: Props) {
                 </Text>
               </TouchableOpacity>
             </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Delete Menu Modal */}
+      <Modal visible={showMenu} animationType='fade' transparent>
+        <Pressable
+          className='flex-1 bg-black/50 justify-center items-center'
+          onPress={() => setShowMenu(false)}
+        >
+          <Pressable
+            className='bg-white rounded-2xl w-[80%] max-w-sm overflow-hidden'
+            onPress={(e) => e.stopPropagation()}
+          >
+            <TouchableOpacity
+              className='p-4 border-b border-gray-200'
+              onPress={handleDeletePost}
+            >
+              <Text className='text-red-500 font-semibold text-center text-base'>
+                Delete Post
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className='p-4'
+              onPress={() => setShowMenu(false)}
+            >
+              <Text className='text-gray-700 text-center text-base'>
+                Cancel
+              </Text>
+            </TouchableOpacity>
           </Pressable>
         </Pressable>
       </Modal>
