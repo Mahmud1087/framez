@@ -10,7 +10,7 @@ import { Tabs } from 'expo-router';
 // import { useEffect } from 'react';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import '../../globals.css';
+// import '../../globals.css';
 
 export default function TabsLayout() {
   // const [fontsLoaded, error] = useFonts({

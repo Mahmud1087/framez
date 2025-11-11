@@ -8,13 +8,17 @@
  * @module
  */
 
+import type * as posts_create_post from "../posts/create_post.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  "posts/create_post": typeof posts_create_post;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
