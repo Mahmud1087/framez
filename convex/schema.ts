@@ -13,11 +13,19 @@ export default defineSchema({
         url: v.string(),
       })
     ),
+    reposts: v.optional(v.number()),
     likes: v.number(),
     createdAt: v.number(),
+
+    isRepost: v.optional(v.boolean()),
+    originalPostId: v.optional(v.id('posts')),
+    originalUserId: v.optional(v.string()),
+    originalFullName: v.optional(v.string()),
+    originalUserAvatar: v.optional(v.string()),
   })
     .index('by_user', ['userId'])
-    .index('by_createdAt', ['createdAt']),
+    .index('by_createdAt', ['createdAt'])
+    .index('by_user_and_original', ['userId', 'originalPostId']),
 
   comments: defineTable({
     postId: v.id('posts'),
@@ -26,12 +34,15 @@ export default defineSchema({
     avatar: v.string(),
     text: v.string(),
     createdAt: v.number(),
-  }).index('by_post', ['postId']),
+  })
+    .index('by_post', ['postId'])
+    .index('by_user', ['userId']),
 
   likes: defineTable({
     postId: v.id('posts'),
     userId: v.string(),
   })
     .index('by_post', ['postId'])
+    .index('by_user', ['userId'])
     .index('by_user_post', ['userId', 'postId']),
 });

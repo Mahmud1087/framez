@@ -32,6 +32,7 @@ const NewPost = () => {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [postType, setPostType] = useState<'media' | 'text'>('media');
 
   const [errors, setErrors] = useState({
     caption: '',
@@ -54,7 +55,7 @@ const NewPost = () => {
   };
 
   const validateMedia = (mediaArray: MediaItem[]) => {
-    if (mediaArray.length === 0) {
+    if (postType === 'media' && mediaArray.length === 0) {
       return 'At least one image or video is required';
     }
     if (mediaArray.length > 10) {
@@ -80,6 +81,15 @@ const NewPost = () => {
       case 'media':
         setErrors((prev) => ({ ...prev, media: validateMedia(media) }));
         break;
+    }
+  };
+
+  const handlePostTypeChange = (type: 'media' | 'text') => {
+    setPostType(type);
+    // Clear media if switching to text-only
+    if (type === 'text') {
+      setMedia([]);
+      setErrors((prev) => ({ ...prev, media: '' }));
     }
   };
 
@@ -149,27 +159,6 @@ const NewPost = () => {
   ): Promise<string> => {
     // TODO: Implement actual file upload to your storage service
     // This is a placeholder that simulates upload
-    // You would typically use Convex storage, AWS S3, Cloudinary, etc.
-
-    // For now, returning the local URI
-    // In production, replace this with actual upload logic:
-    /*
-    const formData = new FormData();
-    formData.append('file', {
-      uri: mediaItem.uri,
-      type: mediaItem.type === 'video' ? 'video/mp4' : 'image/jpeg',
-      name: `media_${Date.now()}.${mediaItem.type === 'video' ? 'mp4' : 'jpg'}`,
-    } as any);
-    
-    const response = await fetch('YOUR_UPLOAD_ENDPOINT', {
-      method: 'POST',
-      body: formData,
-    });
-    const data = await response.json();
-    return data.url;
-    */
-
-    // Simulating upload delay
     await new Promise((resolve) => setTimeout(resolve, 500));
     return mediaItem.uri; // Replace with actual uploaded URL
   };
@@ -200,19 +189,23 @@ const NewPost = () => {
       }
 
       setLoading(true);
-      setUploadingMedia(true);
+      setUploadingMedia(postType === 'media' && media.length > 0);
 
       try {
-        // Upload all media files
-        const uploadedMedia = await Promise.all(
-          media.map(async (item) => {
-            const url = await uploadMediaToStorage(item);
-            return {
-              type: item.type,
-              url,
-            };
-          })
-        );
+        let uploadedMedia: { type: string; url: string }[] = [];
+
+        // Upload media only if not text-only post
+        if (postType === 'media' && media.length > 0) {
+          uploadedMedia = await Promise.all(
+            media.map(async (item) => {
+              const url = await uploadMediaToStorage(item);
+              return {
+                type: item.type,
+                url,
+              };
+            })
+          );
+        }
 
         setUploadingMedia(false);
 
@@ -236,6 +229,7 @@ const NewPost = () => {
               // Reset form
               setCaption('');
               setMedia([]);
+              setPostType('media');
               setTouched({ caption: false, media: false });
               setErrors({ caption: '', media: '' });
 
@@ -273,69 +267,127 @@ const NewPost = () => {
               Create New Post
             </Text>
 
-            {/* Media Preview */}
+            {/* Post Type Toggle */}
             <View className='mb-6'>
-              <Text className='form-label'>Media</Text>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                className='mb-3'
-              >
-                {media.map((item, index) => (
-                  <View key={index} className='mr-3 relative'>
-                    <Image
-                      source={{ uri: item.uri }}
-                      className='w-32 h-32 rounded-lg'
-                      resizeMode='cover'
+              <Text className='form-label mb-2'>Post Type</Text>
+              <View className='flex-row bg-gray-800 rounded-xl p-1'>
+                <TouchableOpacity
+                  onPress={() => handlePostTypeChange('media')}
+                  className={`flex-1 py-3 rounded-lg ${
+                    postType === 'media' ? 'bg-blue-500' : 'bg-transparent'
+                  }`}
+                >
+                  <View className='flex-row items-center justify-center gap-2'>
+                    <Ionicons
+                      name='image'
+                      size={20}
+                      color={postType === 'media' ? 'white' : '#9CA3AF'}
                     />
-                    <TouchableOpacity
-                      onPress={() => removeMedia(index)}
-                      className='absolute top-1 right-1 bg-red-500 rounded-full w-6 h-6 items-center justify-center'
+                    <Text
+                      className={`font-semibold ${
+                        postType === 'media' ? 'text-white' : 'text-gray-400'
+                      }`}
                     >
-                      <Ionicons name='close' size={16} color='white' />
-                    </TouchableOpacity>
-                    {item.type === 'video' && (
-                      <View className='absolute bottom-1 left-1 bg-black/60 rounded px-2 py-0.5'>
-                        <Text className='text-white text-xs'>Video</Text>
-                      </View>
-                    )}
-                  </View>
-                ))}
-
-                {media.length < 10 && (
-                  <TouchableOpacity
-                    onPress={pickMedia}
-                    className='w-32 h-32 border-2 border-dashed border-gray-600 rounded-lg items-center justify-center bg-gray-800'
-                  >
-                    <Ionicons name='add' size={32} color='#9CA3AF' />
-                    <Text className='text-gray-400 text-xs mt-1'>
-                      Add Media
+                      Media
                     </Text>
-                  </TouchableOpacity>
-                )}
-              </ScrollView>
+                  </View>
+                </TouchableOpacity>
 
-              {errors.media && touched.media && (
-                <Text className='text-red-500 text-sm mt-1'>
-                  {errors.media}
-                </Text>
-              )}
-
-              <Text className='text-gray-400 text-xs mt-1'>
-                {media.length}/10 media items
-              </Text>
+                <TouchableOpacity
+                  onPress={() => handlePostTypeChange('text')}
+                  className={`flex-1 py-3 rounded-lg ${
+                    postType === 'text' ? 'bg-blue-500' : 'bg-transparent'
+                  }`}
+                >
+                  <View className='flex-row items-center justify-center gap-2'>
+                    <Ionicons
+                      name='text'
+                      size={20}
+                      color={postType === 'text' ? 'white' : '#9CA3AF'}
+                    />
+                    <Text
+                      className={`font-semibold ${
+                        postType === 'text' ? 'text-white' : 'text-gray-400'
+                      }`}
+                    >
+                      Text Only
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
             </View>
+
+            {/* Media Preview - Only show for media posts */}
+            {postType === 'media' && (
+              <View className='mb-6'>
+                <Text className='form-label'>Media</Text>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  className='mb-3'
+                >
+                  {media.map((item, index) => (
+                    <View key={index} className='mr-3 relative'>
+                      <Image
+                        source={{ uri: item.uri }}
+                        className='w-32 h-32 rounded-lg'
+                        resizeMode='cover'
+                      />
+                      <TouchableOpacity
+                        onPress={() => removeMedia(index)}
+                        className='absolute top-1 right-1 bg-red-500 rounded-full w-6 h-6 items-center justify-center'
+                      >
+                        <Ionicons name='close' size={16} color='white' />
+                      </TouchableOpacity>
+                      {item.type === 'video' && (
+                        <View className='absolute bottom-1 left-1 bg-black/60 rounded px-2 py-0.5'>
+                          <Text className='text-white text-xs'>Video</Text>
+                        </View>
+                      )}
+                    </View>
+                  ))}
+
+                  {media.length < 10 && (
+                    <TouchableOpacity
+                      onPress={pickMedia}
+                      className='w-32 h-32 border-2 border-dashed border-gray-600 rounded-lg items-center justify-center bg-gray-800'
+                    >
+                      <Ionicons name='add' size={32} color='#9CA3AF' />
+                      <Text className='text-gray-400 text-xs mt-1'>
+                        Add Media
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </ScrollView>
+
+                {errors.media && touched.media && (
+                  <Text className='text-red-500 text-sm mt-1'>
+                    {errors.media}
+                  </Text>
+                )}
+
+                <Text className='text-gray-400 text-xs mt-1'>
+                  {media.length}/10 media items
+                </Text>
+              </View>
+            )}
 
             {/* Caption Input */}
             <View className='mb-6'>
-              <Text className='form-label'>Caption</Text>
+              <Text className='form-label'>
+                {postType === 'text' ? 'Your Thoughts' : 'Caption'}
+              </Text>
               <TextInput
-                placeholder='Write a caption...'
+                placeholder={
+                  postType === 'text'
+                    ? "Share what's on your mind..."
+                    : 'Write a caption...'
+                }
                 placeholderTextColor='#9CA3AF'
-                className={`@apply bg-gray-800 text-gray-400 shadow rounded-xl py-4 px-3 font-josefinSans min-h-[120px] ${
-                  errors.caption && touched.caption ? 'border-red-500' : ''
-                }`}
+                className={`bg-gray-800 text-gray-100 shadow rounded-xl py-4 px-3 font-josefinSans ${
+                  postType === 'text' ? 'min-h-[200px]' : 'min-h-[120px]'
+                } ${errors.caption && touched.caption ? 'border-red-500' : ''}`}
                 value={caption}
                 onChangeText={handleCaptionChange}
                 onBlur={() => handleBlur('caption')}

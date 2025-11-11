@@ -14,6 +14,7 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  Share,
   Text,
   TextInput,
   TouchableOpacity,
@@ -42,11 +43,18 @@ export interface Post {
   caption: string;
   likes: number;
   createdAt: number;
+  isRepost?: boolean;
+  originalPost?: {
+    _id: Id<'posts'>;
+    userId: string;
+    fullName: string;
+    userAvatar: string;
+  };
 }
 
 interface Props {
   post: Post;
-  showDeleteOption?: boolean; // True when viewing user's own profile
+  showDeleteOption?: boolean;
 }
 
 export default function InstagramPost({
@@ -55,16 +63,17 @@ export default function InstagramPost({
 }: Props) {
   const { user } = useUser();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [bookmarked, setBookmarked] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Convex mutations and queries
   const toggleLike = useMutation(api.posts.create_post.toggleLike);
   const addComment = useMutation(api.posts.create_post.addComment);
   const deletePost = useMutation(api.posts.create_post.deletePost);
+  const repostPost = useMutation(api.posts.create_post.repostPost);
   const comments = useQuery(api.posts.create_post.getComments, {
     postId: post._id,
   });
@@ -86,6 +95,9 @@ export default function InstagramPost({
   const isOwnPost = user?.id === post.userId;
   const canDelete = showDeleteOption && isOwnPost;
 
+  // Check if post is text-only
+  const isTextOnly = !post.media || post.media.length === 0;
+
   // Pause all videos except the current one
   useEffect(() => {
     videoRefs.current.forEach((video, index) => {
@@ -94,7 +106,7 @@ export default function InstagramPost({
           video.playAsync();
         } else {
           video.pauseAsync();
-          video.setPositionAsync(0); // Reset to beginning
+          video.setPositionAsync(0);
         }
       }
     });
@@ -148,6 +160,61 @@ export default function InstagramPost({
     } catch (error: any) {
       console.error('Like error:', error);
       Alert.alert('Error', 'Failed to update like. Please try again.', [
+        { text: 'OK', style: 'default' },
+      ]);
+    }
+  };
+
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+
+  const handleRepost = async () => {
+    if (!user) {
+      Alert.alert(
+        'Authentication Required',
+        'You must be logged in to repost.',
+        [{ text: 'OK', style: 'default' }]
+      );
+      return;
+    }
+
+    setShowShareModal(false);
+
+    try {
+      await repostPost({
+        originalPostId: post._id,
+        userId: user.id,
+        fullName:
+          `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+          'Anonymous',
+        userAvatar:
+          user.imageUrl ||
+          `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+      });
+
+      Alert.alert('Success', 'Post reposted successfully!', [
+        { text: 'OK', style: 'default' },
+      ]);
+    } catch (error: any) {
+      console.error('Repost error:', error);
+      Alert.alert('Error', 'Failed to repost. Please try again.', [
+        { text: 'OK', style: 'default' },
+      ]);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    setShowShareModal(false);
+
+    try {
+      await Share.share({
+        message: `Check out this post by ${post.fullName}: ${post.caption}\n\nShared via MyApp`,
+        title: `Post by ${post.fullName}`,
+      });
+    } catch (error: any) {
+      console.error('Share error:', error);
+      Alert.alert('Error', 'Failed to share post.', [
         { text: 'OK', style: 'default' },
       ]);
     }
@@ -247,7 +314,22 @@ export default function InstagramPost({
             source={{ uri: post.userAvatar }}
             className='w-10 h-10 rounded-full mr-3'
           />
-          <Text className='font-semibold text-sm'>{post.fullName}</Text>
+          <View className='flex-1'>
+            <View className='flex-row items-center gap-2'>
+              <Text className='font-semibold text-sm'>{post.fullName}</Text>
+              {post.isRepost && (
+                <View className='flex-row items-center'>
+                  <Ionicons name='repeat' size={14} color='#6B7280' />
+                  <Text className='text-xs text-gray-500 ml-1'>reposted</Text>
+                </View>
+              )}
+            </View>
+            {post.isRepost && post.originalPost && (
+              <Text className='text-xs text-gray-500'>
+                from {post.originalPost.fullName}
+              </Text>
+            )}
+          </View>
         </View>
         {canDelete && (
           <TouchableOpacity onPress={() => setShowMenu(true)}>
@@ -256,69 +338,93 @@ export default function InstagramPost({
         )}
       </View>
 
-      {/* Media Carousel (Images & Videos) */}
-      <Pressable onPress={handleDoubleTap} className='relative'>
-        <Carousel
-          width={SCREEN_WIDTH}
-          height={SCREEN_WIDTH}
-          data={post.media}
-          enabled={post.media.length > 1}
-          renderItem={({ item, index }) => {
-            if (item.type === 'video') {
+      {/* Media Carousel (Images & Videos) or Text-only Content */}
+      {!isTextOnly ? (
+        <Pressable onPress={handleDoubleTap} className='relative'>
+          <Carousel
+            width={SCREEN_WIDTH}
+            height={SCREEN_WIDTH}
+            data={post.media}
+            enabled={post.media.length > 1}
+            renderItem={({ item, index }) => {
+              if (item.type === 'video') {
+                return (
+                  <Video
+                    ref={(ref) => {
+                      videoRefs.current[index] = ref;
+                    }}
+                    source={{ uri: item.url }}
+                    style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH }}
+                    resizeMode={ResizeMode.COVER}
+                    useNativeControls
+                    shouldPlay={false}
+                    isLooping
+                    isMuted={false}
+                  />
+                );
+              }
+
               return (
-                <Video
-                  ref={(ref) => {
-                    videoRefs.current[index] = ref;
-                  }}
+                <Image
                   source={{ uri: item.url }}
                   style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH }}
-                  resizeMode={ResizeMode.COVER}
-                  useNativeControls
-                  shouldPlay={false}
-                  isLooping
-                  isMuted={false}
+                  resizeMode='cover'
                 />
               );
-            }
-
-            return (
-              <Image
-                source={{ uri: item.url }}
-                style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH }}
-                resizeMode='cover'
-              />
-            );
-          }}
-          onSnapToItem={setCurrentSlide}
-        />
-
-        {/* Slide Indicators */}
-        {post.media.length > 1 && (
-          <View className='absolute bottom-3 left-0 right-0 flex-row justify-center gap-1'>
-            {post.media.map((_, idx) => (
-              <View
-                key={idx}
-                className={`w-1.5 h-1.5 rounded-full ${
-                  idx === currentSlide ? 'bg-blue-500' : 'bg-white/60'
-                }`}
-              />
-            ))}
-          </View>
-        )}
-
-        {/* Double Tap Like Animation */}
-        {showLikeAnimation && (
-          <Animated.View
-            className='absolute inset-0 items-center justify-center'
-            style={{
-              transform: [{ scale: likeScale }],
-              opacity: likeAnimation,
             }}
-          >
-            <Ionicons name='heart' size={100} color='white' />
-          </Animated.View>
-        )}
-      </Pressable>
+            onSnapToItem={setCurrentSlide}
+          />
+
+          {/* Slide Indicators */}
+          {post.media.length > 1 && (
+            <View className='absolute bottom-3 left-0 right-0 flex-row justify-center gap-1'>
+              {post.media.map((_, idx) => (
+                <View
+                  key={idx}
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    idx === currentSlide ? 'bg-blue-500' : 'bg-white/60'
+                  }`}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* Double Tap Like Animation */}
+          {showLikeAnimation && (
+            <Animated.View
+              className='absolute inset-0 items-center justify-center'
+              style={{
+                transform: [{ scale: likeScale }],
+                opacity: likeAnimation,
+              }}
+            >
+              <Ionicons name='heart' size={100} color='white' />
+            </Animated.View>
+          )}
+        </Pressable>
+      ) : (
+        // Text-only post display
+        <Pressable onPress={handleDoubleTap} className='relative'>
+          <View className='bg-gradient-to-br from-blue-50 to-purple-50 p-8 min-h-[300px] items-center justify-center'>
+            <Text className='text-gray-800 text-xl text-center font-semibold leading-relaxed'>
+              {post.caption}
+            </Text>
+          </View>
+
+          {/* Double Tap Like Animation */}
+          {showLikeAnimation && (
+            <Animated.View
+              className='absolute inset-0 items-center justify-center'
+              style={{
+                transform: [{ scale: likeScale }],
+                opacity: likeAnimation,
+              }}
+            >
+              <Ionicons name='heart' size={100} color='#EF4444' />
+            </Animated.View>
+          )}
+        </Pressable>
+      )}
 
       {/* Actions */}
       <View className='flex-row justify-between p-3'>
@@ -335,18 +441,10 @@ export default function InstagramPost({
             <Ionicons name='chatbubble-outline' size={26} color='black' />
           </TouchableOpacity>
 
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleShare}>
             <Ionicons name='paper-plane-outline' size={26} color='black' />
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity onPress={() => setBookmarked(!bookmarked)}>
-          <Ionicons
-            name={bookmarked ? 'bookmark' : 'bookmark-outline'}
-            size={26}
-            color='black'
-          />
-        </TouchableOpacity>
       </View>
 
       {/* Likes */}
@@ -354,15 +452,27 @@ export default function InstagramPost({
         {post.likes.toLocaleString()} likes
       </Text>
 
-      {/* Caption */}
-      <View className='px-3 pb-3'>
-        <Text className='text-sm'>
-          <Text className='font-semibold'>{post.fullName}</Text> {post.caption}
-        </Text>
-        <Text className='text-gray-500 text-xs mt-1'>
-          {formatTimestamp(post.createdAt)}
-        </Text>
-      </View>
+      {/* Caption - Only show if not text-only post */}
+      {!isTextOnly && (
+        <View className='px-3 pb-3'>
+          <Text className='text-sm'>
+            <Text className='font-semibold'>{post.fullName}</Text>{' '}
+            {post.caption}
+          </Text>
+          <Text className='text-gray-500 text-xs mt-1'>
+            {formatTimestamp(post.createdAt)}
+          </Text>
+        </View>
+      )}
+
+      {/* Timestamp for text-only posts */}
+      {isTextOnly && (
+        <View className='px-3 pb-3'>
+          <Text className='text-gray-500 text-xs'>
+            {formatTimestamp(post.createdAt)}
+          </Text>
+        </View>
+      )}
 
       {/* Comments Preview */}
       <TouchableOpacity
@@ -513,6 +623,75 @@ export default function InstagramPost({
                 Cancel
               </Text>
             </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Share Modal */}
+      <Modal visible={showShareModal} animationType='slide' transparent>
+        <Pressable
+          className='flex-1 bg-black/50'
+          onPress={() => setShowShareModal(false)}
+        >
+          <Pressable
+            className='absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl'
+            onPress={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <View className='items-center justify-center p-4 border-b border-gray-200'>
+              <View className='w-12 h-1 bg-gray-300 rounded-full absolute top-2' />
+              <Text className='font-semibold text-base'>Share</Text>
+              <TouchableOpacity
+                className='absolute right-4'
+                onPress={() => setShowShareModal(false)}
+              >
+                <Ionicons name='close' size={24} color='black' />
+              </TouchableOpacity>
+            </View>
+
+            {/* Share Options */}
+            <View className='p-4'>
+              <TouchableOpacity
+                onPress={handleRepost}
+                className='flex-row items-center p-4 border-b border-gray-200'
+              >
+                <View className='w-12 h-12 bg-gray-100 rounded-full items-center justify-center mr-4'>
+                  <Ionicons name='repeat' size={24} color='#3B82F6' />
+                </View>
+                <View className='flex-1'>
+                  <Text className='font-semibold text-base'>Repost</Text>
+                  <Text className='text-gray-500 text-sm'>
+                    Share to your feed
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleSendMessage}
+                className='flex-row items-center p-4'
+              >
+                <View className='w-12 h-12 bg-gray-100 rounded-full items-center justify-center mr-4'>
+                  <Ionicons name='paper-plane' size={24} color='#3B82F6' />
+                </View>
+                <View className='flex-1'>
+                  <Text className='font-semibold text-base'>
+                    Send via Message
+                  </Text>
+                  <Text className='text-gray-500 text-sm'>
+                    Share with friends
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setShowShareModal(false)}
+                className='mt-4 p-4 bg-gray-100 rounded-xl'
+              >
+                <Text className='text-gray-700 text-center font-semibold'>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>

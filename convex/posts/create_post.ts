@@ -18,41 +18,6 @@ export const createPost = mutation({
   },
 });
 
-export const getFeed = query({
-  args: {
-    cursor: v.optional(v.string()),
-    limit: v.number(),
-  },
-  handler: async ({ db }, { cursor, limit }) => {
-    let feed = db.query('posts').withIndex('by_createdAt').order('desc');
-
-    if (cursor) {
-      feed = feed.filter((q) => q.lt('createdAt', Number(cursor) as any));
-    }
-
-    const results = await feed.take(limit);
-
-    return {
-      posts: results,
-      nextCursor:
-        results.length === limit
-          ? results[results.length - 1].createdAt.toString()
-          : null,
-    };
-  },
-});
-
-export const getUserPosts = query({
-  args: { userId: v.string() },
-  handler: async ({ db }, { userId }) => {
-    return await db
-      .query('posts')
-      .withIndex('by_user', (q) => q.eq('userId', userId))
-      .order('desc')
-      .collect();
-  },
-});
-
 export const toggleLike = mutation({
   args: { postId: v.id('posts'), userId: v.string() },
   handler: async ({ db }, { postId, userId }) => {
@@ -149,5 +114,159 @@ export const deletePost = mutation({
     }
 
     return { success: true };
+  },
+});
+
+export const repostPost = mutation({
+  args: {
+    originalPostId: v.id('posts'),
+    userId: v.string(),
+    fullName: v.string(),
+    userAvatar: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Get the original post
+    const originalPost = await ctx.db.get(args.originalPostId);
+
+    if (!originalPost) {
+      throw new Error('Original post not found');
+    }
+
+    // Check if user already reposted this
+    const existingRepost = await ctx.db
+      .query('posts')
+      .withIndex('by_user_and_original', (q) =>
+        q.eq('userId', args.userId).eq('originalPostId', args.originalPostId)
+      )
+      .first();
+
+    if (existingRepost) {
+      throw new Error('You have already reposted this post');
+    }
+
+    // Create the repost
+    const repostId = await ctx.db.insert('posts', {
+      userId: args.userId,
+      fullName: args.fullName,
+      userAvatar: args.userAvatar,
+      media: originalPost.media,
+      caption: originalPost.caption,
+      likes: 0,
+      createdAt: Date.now(),
+      isRepost: true,
+      originalPostId: args.originalPostId,
+      originalUserId: originalPost.userId,
+      originalFullName: originalPost.fullName,
+      originalUserAvatar: originalPost.userAvatar,
+    });
+
+    // Increment repost count on original post
+    const currentReposts = originalPost.reposts || 0;
+    await ctx.db.patch(args.originalPostId, {
+      reposts: currentReposts + 1,
+    });
+
+    return repostId;
+  },
+});
+
+// Get feed with reposts
+export const getFeed = query({
+  args: {
+    cursor: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 10;
+
+    let postsQuery = ctx.db
+      .query('posts')
+      .order('desc')
+      .take(limit + 1);
+
+    const posts = await postsQuery;
+
+    const hasMore = posts.length > limit;
+    const postsToReturn = hasMore ? posts.slice(0, limit) : posts;
+
+    // Format posts with repost information
+    const formattedPosts = postsToReturn.map((post) => {
+      if (post.isRepost) {
+        return {
+          ...post,
+          originalPost: {
+            _id: post.originalPostId,
+            userId: post.originalUserId,
+            fullName: post.originalFullName,
+            userAvatar: post.originalUserAvatar,
+          },
+        };
+      }
+      return post;
+    });
+
+    return {
+      posts: formattedPosts,
+      nextCursor: hasMore ? posts[limit]._id : null,
+    };
+  },
+});
+
+// Get user posts with reposts
+export const getUserPosts = query({
+  args: {
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const posts = await ctx.db
+      .query('posts')
+      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .order('desc')
+      .collect();
+
+    // Format posts with repost information
+    const formattedPosts = posts.map((post) => {
+      if (post.isRepost) {
+        return {
+          ...post,
+          originalPost: {
+            _id: post.originalPostId,
+            userId: post.originalUserId,
+            fullName: post.originalFullName,
+            userAvatar: post.originalUserAvatar,
+          },
+        };
+      }
+      return post;
+    });
+
+    return formattedPosts;
+  },
+});
+
+// Delete repost
+export const deleteRepost = mutation({
+  args: {
+    postId: v.id('posts'),
+  },
+  handler: async (ctx, args) => {
+    const post = await ctx.db.get(args.postId);
+
+    if (!post) {
+      throw new Error('Post not found');
+    }
+
+    // If it's a repost, decrement the original post's repost count
+    if (post.isRepost && post.originalPostId) {
+      const originalPost = await ctx.db.get(post.originalPostId);
+      if (originalPost) {
+        const currentReposts = originalPost.reposts || 0;
+        await ctx.db.patch(post.originalPostId, {
+          reposts: Math.max(0, currentReposts - 1),
+        });
+      }
+    }
+
+    await ctx.db.delete(args.postId);
   },
 });
