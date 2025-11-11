@@ -3,7 +3,8 @@ import { Id } from '@/convex/_generated/dataModel';
 import { useUser } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
-import React, { useRef, useState } from 'react';
+import { ResizeMode, Video } from 'expo-av';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -70,9 +71,24 @@ export default function InstagramPost({ post }: Props) {
 
   const lastTap = useRef(0);
   const likeAnimation = useRef(new Animated.Value(0)).current;
+  const videoRefs = useRef<(Video | null)[]>([]);
 
   const liked = userLikes?.liked || false;
   const isLoadingComments = comments === undefined;
+
+  // Pause all videos except the current one
+  useEffect(() => {
+    videoRefs.current.forEach((video, index) => {
+      if (video) {
+        if (index === currentSlide) {
+          video.playAsync();
+        } else {
+          video.pauseAsync();
+          video.setPositionAsync(0); // Reset to beginning
+        }
+      }
+    });
+  }, [currentSlide]);
 
   const triggerLikeAnimation = () => {
     setShowLikeAnimation(true);
@@ -192,22 +208,44 @@ export default function InstagramPost({ post }: Props) {
           />
           <Text className='font-semibold text-sm'>{post.fullName}</Text>
         </View>
+        <TouchableOpacity>
+          <Ionicons name='ellipsis-horizontal' size={24} color='black' />
+        </TouchableOpacity>
       </View>
 
-      {/* Image Carousel */}
+      {/* Media Carousel (Images & Videos) */}
       <Pressable onPress={handleDoubleTap} className='relative'>
         <Carousel
           width={SCREEN_WIDTH}
           height={SCREEN_WIDTH}
           data={post.media}
           enabled={post.media.length > 1}
-          renderItem={({ item }) => (
-            <Image
-              source={{ uri: item.url }}
-              style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH }}
-              resizeMode='cover'
-            />
-          )}
+          renderItem={({ item, index }) => {
+            if (item.type === 'video') {
+              return (
+                <Video
+                  ref={(ref) => {
+                    videoRefs.current[index] = ref;
+                  }}
+                  source={{ uri: item.url }}
+                  style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH }}
+                  resizeMode={ResizeMode.COVER}
+                  useNativeControls
+                  shouldPlay={false}
+                  isLooping
+                  isMuted={false}
+                />
+              );
+            }
+
+            return (
+              <Image
+                source={{ uri: item.url }}
+                style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH }}
+                resizeMode='cover'
+              />
+            );
+          }}
           onSnapToItem={setCurrentSlide}
         />
 
