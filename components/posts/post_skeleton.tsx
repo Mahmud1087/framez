@@ -14,7 +14,7 @@ export default function PostSkeleton() {
 
       <View className='bg-gray-300' style={{ height: SCREEN_WIDTH }} />
 
-      <View className='p-3 space-y-3'>
+      <View className='p-3 space-y-3 flex flex-col gap-3'>
         <View className='h-4 bg-gray-300 rounded w-20' />
         <View className='h-4 bg-gray-300 rounded w-full' />
         <View className='h-4 bg-gray-300 rounded w-3/4' />

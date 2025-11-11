@@ -306,7 +306,7 @@ export default function InstagramPost({
   });
 
   return (
-    <View className='bg-white mb-6'>
+    <View className='bg-white mb-1'>
       {/* Header */}
       <View className='flex-row items-center justify-between p-3 border-b border-gray-200'>
         <View className='flex-row items-center flex-1'>
