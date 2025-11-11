@@ -1,4 +1,5 @@
 import { useUser } from '@clerk/clerk-expo';
+import { router } from 'expo-router';
 import { Image, Text, View } from 'react-native';
 import { Pressable } from 'react-native-gesture-handler';
 const AppHeader = () => {
@@ -10,7 +11,7 @@ const AppHeader = () => {
         <Text className='text-2xl font-josefinSans-semibold text-white-100'>
           Framez
         </Text>
-        <Pressable>
+        <Pressable onPress={() => router.navigate('/my_posts')}>
           <Image
             source={{ uri: user?.imageUrl }}
             style={{ width: 32, height: 32 }}
