@@ -365,11 +365,16 @@ export default function InstagramPost({
               }
 
               return (
-                <Image
-                  source={{ uri: item.url }}
+                <View
                   style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH }}
-                  resizeMode='cover'
-                />
+                  className='bg-blue-200'
+                >
+                  <Image
+                    source={{ uri: item.url }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode='contain'
+                  />
+                </View>
               );
             }}
             onSnapToItem={setCurrentSlide}
@@ -404,9 +409,9 @@ export default function InstagramPost({
         </Pressable>
       ) : (
         // Text-only post display
-        <Pressable onPress={handleDoubleTap} className='relative'>
+        <Pressable onPress={handleDoubleTap} className='relative bg-gray-900'>
           <View className='bg-gradient-to-br from-blue-50 to-purple-50 p-8 min-h-[300px] items-center justify-center'>
-            <Text className='text-gray-800 text-xl text-center font-semibold leading-relaxed'>
+            <Text className='text-white-100 text-xl text-center font-semibold leading-relaxed'>
               {post.caption}
             </Text>
           </View>
@@ -533,16 +538,8 @@ export default function InstagramPost({
                         <Text className='text-xs text-gray-500'>
                           {formatTimestamp(c.createdAt)}
                         </Text>
-                        <TouchableOpacity>
-                          <Text className='text-xs font-semibold text-gray-500'>
-                            Reply
-                          </Text>
-                        </TouchableOpacity>
                       </View>
                     </View>
-                    <TouchableOpacity>
-                      <Ionicons name='heart-outline' size={14} color='#999' />
-                    </TouchableOpacity>
                   </View>
                 ))
               ) : (
@@ -573,7 +570,7 @@ export default function InstagramPost({
                 />
               )}
               <TextInput
-                className='flex-1 border border-gray-300 rounded-full px-4 py-2'
+                className='flex-1 border border-gray-900 bg-gray-300 text-black rounded-full px-4 py-2'
                 placeholder='Add a comment...'
                 value={commentText}
                 onChangeText={setCommentText}

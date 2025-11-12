@@ -49,7 +49,7 @@ export default function PostFeed({ userId, limit = 10 }: Props) {
   // Initialize posts when data loads
   useEffect(() => {
     if (posts && !cursor) {
-      setAllPosts(posts);
+      setAllPosts(posts as Post[]);
       setHasMorePosts(!isUserProfile && !!nextCursor);
     }
   }, [posts, cursor, nextCursor, isUserProfile]);
@@ -91,7 +91,7 @@ export default function PostFeed({ userId, limit = 10 }: Props) {
     // Wait a bit for the query to refresh
     setTimeout(() => {
       if (posts) {
-        setAllPosts(posts);
+        setAllPosts(posts as Post[]);
         setHasMorePosts(!isUserProfile && !!nextCursor);
       }
       setRefreshing(false);
