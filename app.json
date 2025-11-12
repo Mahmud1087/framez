@@ -51,7 +51,10 @@
       "router": {},
       "eas": {
         "projectId": "cafc9197-9831-4974-8b46-db78aefa7b96"
-      }
+      },
+      "clerkPublishableKey": "pk_test_ZmxlZXQtc3VuZmlzaC03My5jbGVyay5hY2NvdW50cy5kZXYk",
+      "convexUrl": "https://qualified-beagle-987.convex.cloud",
+      "convexDeployment": "dev:qualified-beagle-987"
     }
   }
 }
